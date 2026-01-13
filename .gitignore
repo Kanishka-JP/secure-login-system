@@ -70,3 +70,6 @@ Desktop.ini
 *.bak
 *.cache
 
+# Firebase service account
+firebase-key.json
+backend/firebase-key.json

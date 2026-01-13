@@ -6,5 +6,4 @@ pyotp
 python-jose
 qrcode[pil]
 email-validator
-
-#agfz saxv ezxt jgsj
+python-dotenv
