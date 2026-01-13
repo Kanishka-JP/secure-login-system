@@ -11,7 +11,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173", "https://secure-login-system.vercel.app"  # React (Vite)
+        "http://localhost:5173", 
+        "https://secure-login-system-three.vercel.app"  # React (Vite)
     ],
     allow_credentials=True,
     allow_methods=["*"],
