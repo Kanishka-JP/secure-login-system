@@ -41,8 +41,15 @@ def send_email_otp_route(data: EmailRequest):
         "verified": False,
     })
 
-    send_otp_email(data.email, otp)
-    return {"message": "OTP sent to email"}
+    try:
+        send_otp_email(data.email, otp)
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Email service unavailable. Try again later."
+        )
+
+        return {"message": "OTP sent to email"}
 
 
 # ================= STEP 2: VERIFY EMAIL OTP =================

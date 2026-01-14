@@ -3,7 +3,8 @@ from email.mime.text import MIMEText
 from app.config import EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD
 
 def send_otp_email(to_email: str, otp: str):
-    body = f"""
+    try:
+        body = f"""
 Your Secure Login verification code is:
 
 {otp}
@@ -11,12 +12,16 @@ Your Secure Login verification code is:
 This OTP is valid for 5 minutes.
 If you did not request this, please ignore this email.
 """
+        msg = MIMEText(body)
+        msg["Subject"] = "Secure Login – Email Verification"
+        msg["From"] = EMAIL_USER
+        msg["To"] = to_email
 
-    msg = MIMEText(body)
-    msg["Subject"] = "Secure Login – Email Verification"
-    msg["From"] = EMAIL_USER
-    msg["To"] = to_email
+        with smtplib.SMTP_SSL(EMAIL_HOST, EMAIL_PORT, timeout=10) as server:
+            server.login(EMAIL_USER, EMAIL_PASSWORD)
+            server.send_message(msg)
 
-    with smtplib.SMTP_SSL(EMAIL_HOST, EMAIL_PORT) as server:
-        server.login(EMAIL_USER, EMAIL_PASSWORD)
-        server.send_message(msg)
+    except Exception as e:
+        # IMPORTANT: log error so Render shows it
+        print("EMAIL ERROR:", str(e))
+        raise RuntimeError("Failed to send email")
