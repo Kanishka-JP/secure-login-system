@@ -29,26 +29,42 @@ export default function AuthPage({ onLogin }) {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   /* ================= REGISTER FLOW ================= */
 
   const handleSendOTP = async () => {
     setError("");
+    setSuccess("");
+
+    if (!regEmail) {
+      setError("Please enter a valid email");
+      return;
+    }
+
     try {
+      setLoading(true);
       await sendEmailOTP(regEmail);
       setRegStep(1);
-    } catch {
-      setError("Failed to send OTP");
+      setSuccess("OTP sent to your email");
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Failed to send OTP");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleVerifyOTP = async () => {
     setError("");
     try {
+      setLoading(true);
       await verifyEmailOTP(regEmail, regOtp);
       setRegStep(2);
-    } catch {
-      setError("Invalid or expired OTP");
+      setSuccess("Email verified");
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Invalid or expired OTP");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,12 +76,15 @@ export default function AuthPage({ onLogin }) {
     }
 
     try {
+      setLoading(true);
       await setPassword(regEmail, regPassword, regConfirm);
       setSuccess("Registration successful. Please login.");
       setActiveTab("login");
       setLoginStep(0);
-    } catch {
-      setError("Registration failed");
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Registration failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,11 +102,14 @@ export default function AuthPage({ onLogin }) {
   const handleLogin = async () => {
     setError("");
     try {
+      setLoading(true);
       const res = await loginUser(loginEmail, loginPassword, loginOtp);
       localStorage.setItem("token", res.data.access_token);
       onLogin(loginEmail);
-    } catch {
-      setError("Invalid credentials or OTP");
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Invalid credentials or OTP");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,6 +135,7 @@ export default function AuthPage({ onLogin }) {
               setActiveTab("register");
               setError("");
               setSuccess("");
+              setRegStep(0);
             }}
           >
             Register
@@ -144,10 +167,11 @@ export default function AuthPage({ onLogin }) {
               <>
                 <InputField label="Email" onChange={setRegEmail} />
                 <button
+                  disabled={loading}
                   onClick={handleSendOTP}
                   className="w-full py-3 bg-blue-600 rounded-lg text-white"
                 >
-                  Send OTP
+                  {loading ? "Sending..." : "Send OTP"}
                 </button>
               </>
             )}
@@ -156,6 +180,7 @@ export default function AuthPage({ onLogin }) {
               <>
                 <OTPBoxes onChange={setRegOtp} />
                 <button
+                  disabled={loading}
                   onClick={handleVerifyOTP}
                   className="w-full py-3 bg-green-600 rounded-lg text-white"
                 >
@@ -177,6 +202,7 @@ export default function AuthPage({ onLogin }) {
                   onChange={setRegConfirm}
                 />
                 <button
+                  disabled={loading}
                   onClick={handleSetPassword}
                   className="w-full py-3 bg-indigo-600 rounded-lg text-white"
                 >
@@ -213,10 +239,11 @@ export default function AuthPage({ onLogin }) {
               <>
                 <OTPBoxes onChange={setLoginOtp} />
                 <button
+                  disabled={loading}
                   onClick={handleLogin}
                   className="w-full py-3 bg-green-600 rounded-lg text-white"
                 >
-                  Login
+                  {loading ? "Logging in..." : "Login"}
                 </button>
               </>
             )}
