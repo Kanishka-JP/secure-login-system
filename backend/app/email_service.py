@@ -17,7 +17,7 @@ If you did not request this, please ignore this email.
         msg["From"] = EMAIL_USER
         msg["To"] = to_email
 
-        with smtplib.SMTP_SSL(EMAIL_HOST, EMAIL_PORT, timeout=10) as server:
+        with smtplib.SMTP_SSL(EMAIL_HOST, int(EMAIL_PORT), timeout=10) as server:
             server.login(EMAIL_USER, EMAIL_PASSWORD)
             server.send_message(msg)
 
