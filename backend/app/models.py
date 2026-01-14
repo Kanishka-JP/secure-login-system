@@ -1,12 +1,16 @@
 from pydantic import BaseModel, EmailStr
 
-class RegisterRequest(BaseModel):
+class EmailRequest(BaseModel):
     email: EmailStr
-    password: str
 
-class OTPVerifyRequest(BaseModel):
+class EmailOTPVerify(BaseModel):
     email: EmailStr
     otp: str
+
+class SetPasswordRequest(BaseModel):
+    email: EmailStr
+    password: str
+    confirm_password: str
 
 class LoginRequest(BaseModel):
     email: EmailStr

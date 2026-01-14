@@ -3,11 +3,21 @@ import AuthPage from "./pages/AuthPage";
 import WelcomePage from "./pages/WelcomePage";
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [email, setEmail] = useState(null);
 
-  return loggedIn ? (
-    <WelcomePage onLogout={() => setLoggedIn(false)} />
-  ) : (
-    <AuthPage onLogin={() => setLoggedIn(true)} />
+  const token = localStorage.getItem("token");
+
+  if (!token || !email) {
+    return <AuthPage onLogin={setEmail} />;
+  }
+
+  return (
+    <WelcomePage
+      email={email}
+      onLogout={() => {
+        localStorage.removeItem("token");
+        setEmail(null);
+      }}
+    />
   );
 }
