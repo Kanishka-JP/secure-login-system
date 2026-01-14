@@ -1,27 +1,26 @@
-import smtplib
-from email.mime.text import MIMEText
-from app.config import EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD
+import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+FROM_EMAIL = os.getenv("FROM_EMAIL")
 
 def send_otp_email(to_email: str, otp: str):
+    message = Mail(
+        from_email=FROM_EMAIL,
+        to_emails=to_email,
+        subject="Email Verification OTP",
+        html_content=f"""
+        <h3>Secure Login</h3>
+        <p>Your OTP is:</p>
+        <h2>{otp}</h2>
+        <p>This OTP is valid for 5 minutes.</p>
+        """
+    )
+
     try:
-        body = f"""
-Your Secure Login verification code is:
-
-{otp}
-
-This OTP is valid for 5 minutes.
-If you did not request this, please ignore this email.
-"""
-        msg = MIMEText(body)
-        msg["Subject"] = "Secure Login – Email Verification"
-        msg["From"] = EMAIL_USER
-        msg["To"] = to_email
-
-        with smtplib.SMTP_SSL(EMAIL_HOST, int(EMAIL_PORT), timeout=10) as server:
-            server.login(EMAIL_USER, EMAIL_PASSWORD)
-            server.send_message(msg)
-
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        sg.send(message)
     except Exception as e:
-        # IMPORTANT: log error so Render shows it
-        print("EMAIL ERROR:", str(e))
-        raise RuntimeError("Failed to send email")
+        print("EMAIL ERROR:", e)
+        raise
