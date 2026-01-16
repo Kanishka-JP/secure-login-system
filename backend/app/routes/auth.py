@@ -61,12 +61,13 @@ def verify_email_otp(data: EmailOTPVerify):
     if not doc.exists:
         raise HTTPException(400, "OTP not found")
 
-    data_db = doc.to_dict()
+    otp_data = doc.to_dict()
 
-    if otp_expired(data_db.get("created_at")):
-        raise HTTPException(401, "OTP expired")
+    if datetime.utcnow() > otp_data["expires_at"]:
+        ref.delete()
+        raise HTTPException(400, "OTP expired")
 
-    if data_db.get("otp") != data.otp:
+    if otp_data["otp"] != data.otp:
         raise HTTPException(401, "Invalid OTP")
 
     ref.update({"verified": True})
