@@ -56,21 +56,31 @@ def send_email_otp_route(data: EmailRequest):
 
 # ================= STEP 2: VERIFY EMAIL OTP =================
 @router.post("/register/verify-otp")
-def verify_email_otp(data: EmailOTPVerify):
+def verify_email_otp_route(data: EmailOTPVerify):
     ref = db.collection("email_otps").document(data.email)
     doc = ref.get()
 
     if not doc.exists:
-        raise HTTPException(400, "OTP not found")
+        raise HTTPException(status_code=400, detail="OTP not found")
 
     otp_data = doc.to_dict()
 
-    if datetime.utcnow() > otp_data["expires_at"]:
-        ref.delete()
-        raise HTTPException(400, "OTP expired")
+    created_at = otp_data.get("created_at")
+    if not created_at:
+        raise HTTPException(status_code=400, detail="Invalid OTP record")
 
-    if otp_data["otp"] != data.otp:
-        raise HTTPException(401, "Invalid OTP")
+    # Firestore timestamp → datetime
+    if hasattr(created_at, "to_datetime"):
+        created_at = created_at.to_datetime()
+
+    # Expiry check
+    if otp_expired(created_at):
+        ref.delete()
+        raise HTTPException(status_code=400, detail="OTP expired")
+
+    # OTP match
+    if otp_data.get("otp") != data.otp:
+        raise HTTPException(status_code=401, detail="Invalid OTP")
 
     ref.update({"verified": True})
     return {"message": "Email verified"}

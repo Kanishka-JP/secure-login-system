@@ -4,12 +4,12 @@ from app.routes import auth
 
 app = FastAPI()
 
-# ✅ CORS CONFIGURATION (THIS FIXES YOUR ISSUE)
+# ✅ CORS CONFIG (Vercel ↔ Render)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://secure-login-system-three.vercel.app"
+        "https://secure-login-system-three.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -19,5 +19,5 @@ app.add_middleware(
 app.include_router(auth.router)
 
 @app.get("/")
-def health_check():
+def root():
     return {"status": "Backend running"}
