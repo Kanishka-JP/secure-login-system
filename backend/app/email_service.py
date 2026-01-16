@@ -5,8 +5,11 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 FROM_EMAIL = os.getenv("FROM_EMAIL")
 
 def send_otp_email(to_email: str, otp: str):
-    if not RESEND_API_KEY or not FROM_EMAIL:
-        raise RuntimeError("Resend configuration missing")
+    if not RESEND_API_KEY:
+        raise RuntimeError("RESEND_API_KEY not set")
+
+    if not FROM_EMAIL:
+        raise RuntimeError("FROM_EMAIL not set")
 
     response = requests.post(
         "https://api.resend.com/emails",
@@ -18,16 +21,12 @@ def send_otp_email(to_email: str, otp: str):
             "from": FROM_EMAIL,
             "to": [to_email],
             "subject": "Your Secure Login OTP",
-            "html": f"""
-                <h2>Email Verification</h2>
-                <p>Your OTP is:</p>
-                <h1>{otp}</h1>
-                <p>This OTP is valid for 5 minutes.</p>
-            """,
+            "html": f"<h1>Your OTP is {otp}</h1>",
         },
         timeout=10,
     )
 
-    if response.status_code not in (200, 201):
-        print("RESEND ERROR:", response.text)
-        raise RuntimeError("Failed to send email via Resend")
+    print("Resend status:", response.status_code)
+    print("Resend response:", response.text)
+
+    response.raise_for_status()
