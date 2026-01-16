@@ -51,6 +51,8 @@ def send_email_otp_route(data: EmailRequest):
 
         return {"message": "OTP sent to email"}
 
+send_otp_email(data.email, otp)
+print("OTP SENT:", otp)
 
 # ================= STEP 2: VERIFY EMAIL OTP =================
 @router.post("/register/verify-otp")
