@@ -1,30 +1,33 @@
 import os
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+import requests
 
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 FROM_EMAIL = os.getenv("FROM_EMAIL")
 
 def send_otp_email(to_email: str, otp: str):
-    if not SENDGRID_API_KEY or not FROM_EMAIL:
-        raise RuntimeError("SendGrid configuration missing")
+    if not RESEND_API_KEY or not FROM_EMAIL:
+        raise RuntimeError("Resend configuration missing")
 
-    message = Mail(
-        from_email=FROM_EMAIL,
-        to_emails=to_email,
-        subject="Your Secure Login OTP",
-        html_content=f"""
-        <h2>Email Verification</h2>
-        <p>Your OTP is:</p>
-        <h1>{otp}</h1>
-        <p>This OTP is valid for 5 minutes.</p>
-        """
+    response = requests.post(
+        "https://api.resend.com/emails",
+        headers={
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "from": FROM_EMAIL,
+            "to": [to_email],
+            "subject": "Your Secure Login OTP",
+            "html": f"""
+                <h2>Email Verification</h2>
+                <p>Your OTP is:</p>
+                <h1>{otp}</h1>
+                <p>This OTP is valid for 5 minutes.</p>
+            """,
+        },
+        timeout=10,
     )
 
-    try:
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-        print("SendGrid status:", response.status_code)
-    except Exception as e:
-        print("SENDGRID ERROR:", str(e))
-        raise
+    if response.status_code not in (200, 201):
+        print("RESEND ERROR:", response.text)
+        raise RuntimeError("Failed to send email via Resend")
