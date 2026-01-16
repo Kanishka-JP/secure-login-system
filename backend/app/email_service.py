@@ -1,20 +1,22 @@
-from resend import Resend
+import resend
 from app.config import RESEND_API_KEY, FROM_EMAIL
 
-resend = Resend(api_key=RESEND_API_KEY)
+# Configure API key
+resend.api_key = RESEND_API_KEY
+
 
 def send_otp_email(to_email: str, otp: str):
     try:
-        resend.emails.send({
+        resend.Emails.send({
             "from": FROM_EMAIL,
             "to": to_email,
             "subject": "Your Secure Login OTP",
             "html": f"""
-                <div style="font-family:Arial">
-                  <h2>Secure Login Verification</h2>
-                  <p>Your OTP is:</p>
-                  <h1>{otp}</h1>
-                  <p>This OTP is valid for 5 minutes.</p>
+                <div style="font-family:Arial, sans-serif">
+                    <h2>Secure Login Verification</h2>
+                    <p>Your One-Time Password (OTP) is:</p>
+                    <h1 style="letter-spacing:3px">{otp}</h1>
+                    <p>This OTP is valid for 5 minutes.</p>
                 </div>
             """
         })
