@@ -9,4 +9,5 @@ email-validator
 python-dotenv
 #sendgrid
 requests
+resend
 

@@ -1,32 +1,23 @@
-import os
-import requests
+from resend import Resend
+from app.config import RESEND_API_KEY, FROM_EMAIL
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-FROM_EMAIL = os.getenv("FROM_EMAIL")
+resend = Resend(api_key=RESEND_API_KEY)
 
 def send_otp_email(to_email: str, otp: str):
-    if not RESEND_API_KEY:
-        raise RuntimeError("RESEND_API_KEY not set")
-
-    if not FROM_EMAIL:
-        raise RuntimeError("FROM_EMAIL not set")
-
-    response = requests.post(
-        "https://api.resend.com/emails",
-        headers={
-            "Authorization": f"Bearer {RESEND_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
+    try:
+        resend.emails.send({
             "from": FROM_EMAIL,
-            "to": [to_email],
+            "to": to_email,
             "subject": "Your Secure Login OTP",
-            "html": f"<h1>Your OTP is {otp}</h1>",
-        },
-        timeout=10,
-    )
-
-    print("Resend status:", response.status_code)
-    print("Resend response:", response.text)
-
-    response.raise_for_status()
+            "html": f"""
+                <div style="font-family:Arial">
+                  <h2>Secure Login Verification</h2>
+                  <p>Your OTP is:</p>
+                  <h1>{otp}</h1>
+                  <p>This OTP is valid for 5 minutes.</p>
+                </div>
+            """
+        })
+    except Exception as e:
+        print("EMAIL ERROR:", e)
+        raise RuntimeError("Email service unavailable")

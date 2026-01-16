@@ -28,31 +28,24 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # ================= STEP 1: SEND EMAIL OTP =================
 @router.post("/register/send-otp")
-def send_email_otp_route(data: EmailRequest):
-    if db.collection("users").document(data.email).get().exists:
-        raise HTTPException(400, "User already exists")
-
-    otp = generate_email_otp()
-    expires_at = datetime.utcnow() + timedelta(minutes=5)
-
-    db.collection("email_otps").document(data.email).set({
-        "otp": otp,
-        "expires_at": expires_at,
-        "verified": False,
-    })
-
+def send_email_otp(data: EmailRequest):
     try:
+        otp = generate_email_otp()
+
+        db.collection("email_otps").document(data.email).set({
+            "otp": otp,
+            "created_at": datetime.utcnow()
+        })
+
         send_otp_email(data.email, otp)
-    except Exception:
+
+        return {"message": "OTP sent"}
+    except Exception as e:
+        print("SEND OTP ERROR:", e)
         raise HTTPException(
             status_code=500,
             detail="Email service unavailable. Try again later."
         )
-
-        return {"message": "OTP sent to email"}
-
-    send_otp_email(data.email, otp)
-    print("OTP SENT:", otp)
 
 # ================= STEP 2: VERIFY EMAIL OTP =================
 @router.post("/register/verify-otp")
