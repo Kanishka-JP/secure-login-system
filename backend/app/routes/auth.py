@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from datetime import datetime, timedelta, timezone 
+from datetime import datetime, timedelta, timezone
 import pyotp
 import qrcode
 import io
@@ -8,7 +8,7 @@ import base64
 from app.database import db
 from app.models import (
     EmailRequest,
-    EmailOTPVerify,
+    OTPVerifyRequest,
     SetPasswordRequest,
     LoginRequest,
 )
@@ -25,10 +25,12 @@ from app.config import ISSUER_NAME
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+OTP_VALIDITY_MINUTES = 5
 
-# ================= STEP 1: SEND EMAIL OTP =================
+
+# ================= REGISTER : SEND EMAIL OTP =================
 @router.post("/register/send-otp")
-def send_email_otp(data: EmailRequest):
+def send_email_otp_route(data: EmailRequest):
     if db.collection("users").document(data.email).get().exists:
         raise HTTPException(400, "User already exists")
 
@@ -36,22 +38,20 @@ def send_email_otp(data: EmailRequest):
 
     db.collection("email_otps").document(data.email).set({
         "otp": otp,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(timezone.utc),
     })
 
     try:
         send_otp_email(data.email, otp)
     except Exception:
-        raise HTTPException(500, "Email service unavailable. Try again later.")
+        raise HTTPException(500, "Email service unavailable")
 
     return {"message": "OTP sent to email"}
 
 
-# ================= STEP 2: VERIFY EMAIL OTP =================
-OTP_VALIDITY_MINUTES = 5
-
+# ================= REGISTER : VERIFY EMAIL OTP =================
 @router.post("/register/verify-otp")
-def verify_email_otp(data: EmailOTPVerify):
+def verify_email_otp(data: OTPVerifyRequest):
     ref = db.collection("email_otps").document(data.email)
     doc = ref.get()
 
@@ -59,22 +59,15 @@ def verify_email_otp(data: EmailOTPVerify):
         raise HTTPException(400, "OTP not found")
 
     otp_data = doc.to_dict()
-
     created_at = otp_data.get("created_at")
-    if not created_at:
-        raise HTTPException(400, "Invalid OTP record")
 
-    # Firestore Timestamp → datetime
     if hasattr(created_at, "to_datetime"):
         created_at = created_at.to_datetime()
 
-    # Normalize to UTC
     if created_at.tzinfo is None:
         created_at = created_at.replace(tzinfo=timezone.utc)
 
-    now = datetime.now(timezone.utc)
-
-    if now - created_at > timedelta(minutes=OTP_VALIDITY_MINUTES):
+    if datetime.now(timezone.utc) - created_at > timedelta(minutes=OTP_VALIDITY_MINUTES):
         ref.delete()
         raise HTTPException(400, "OTP expired")
 
@@ -84,7 +77,8 @@ def verify_email_otp(data: EmailOTPVerify):
     ref.update({"verified": True})
     return {"message": "Email verified"}
 
-# ================= STEP 3: SET PASSWORD + GENERATE 2FA =================
+
+# ================= REGISTER : SET PASSWORD + GENERATE 2FA =================
 @router.post("/register/set-password")
 def set_password(data: SetPasswordRequest):
     if data.password != data.confirm_password:
@@ -101,10 +95,9 @@ def set_password(data: SetPasswordRequest):
 
     otpauth_uri = totp.provisioning_uri(
         name=data.email,
-        issuer_name=ISSUER_NAME
+        issuer_name=ISSUER_NAME,
     )
 
-    # Generate QR
     qr = qrcode.make(otpauth_uri)
     buf = io.BytesIO()
     qr.save(buf)
@@ -114,7 +107,7 @@ def set_password(data: SetPasswordRequest):
         "email": data.email,
         "password_hash": hash_password(data.password),
         "totp_secret": secret,
-        "created_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
     })
 
     otp_ref.delete()
@@ -125,7 +118,7 @@ def set_password(data: SetPasswordRequest):
     }
 
 
-# ================= LOGIN (EMAIL + PASSWORD → 2FA) =================
+# ================= LOGIN (ALWAYS 2FA) =================
 @router.post("/login")
 def login(data: LoginRequest):
     user_ref = db.collection("users").document(data.email)
@@ -143,8 +136,74 @@ def login(data: LoginRequest):
         raise HTTPException(401, "Invalid OTP")
 
     token = create_jwt(data.email)
+    return {"access_token": token}
 
-    return {
-        "message": "Login successful",
-        "access_token": token
-    }
+
+# ================= FORGOT PASSWORD : SEND OTP =================
+@router.post("/forgot/send-otp")
+def send_forgot_otp(data: EmailRequest):
+    if not db.collection("users").document(data.email).get().exists:
+        raise HTTPException(404, "User not found")
+
+    otp = generate_email_otp()
+
+    db.collection("password_reset_otps").document(data.email).set({
+        "otp": otp,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    try:
+        send_otp_email(data.email, otp)
+    except Exception:
+        raise HTTPException(500, "Email service unavailable")
+
+    return {"message": "OTP sent"}
+
+
+# ================= FORGOT PASSWORD : VERIFY OTP =================
+@router.post("/forgot/verify-otp")
+def verify_forgot_otp(data: OTPVerifyRequest):
+    ref = db.collection("password_reset_otps").document(data.email)
+    doc = ref.get()
+
+    if not doc.exists:
+        raise HTTPException(400, "OTP not found")
+
+    otp_data = doc.to_dict()
+    created_at = otp_data.get("created_at")
+
+    if hasattr(created_at, "to_datetime"):
+        created_at = created_at.to_datetime()
+
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+
+    if datetime.now(timezone.utc) - created_at > timedelta(minutes=OTP_VALIDITY_MINUTES):
+        ref.delete()
+        raise HTTPException(400, "OTP expired")
+
+    if otp_data.get("otp") != data.otp:
+        raise HTTPException(401, "Invalid OTP")
+
+    ref.update({"verified": True})
+    return {"message": "OTP verified"}
+
+
+# ================= FORGOT PASSWORD : RESET =================
+@router.post("/forgot/reset-password")
+def reset_password(data: SetPasswordRequest):
+    if data.password != data.confirm_password:
+        raise HTTPException(400, "Passwords do not match")
+
+    otp_ref = db.collection("password_reset_otps").document(data.email)
+    otp_doc = otp_ref.get()
+
+    if not otp_doc.exists or not otp_doc.to_dict().get("verified"):
+        raise HTTPException(403, "OTP not verified")
+
+    db.collection("users").document(data.email).update({
+        "password_hash": hash_password(data.password)
+    })
+
+    otp_ref.delete()
+    return {"message": "Password reset successful"}
