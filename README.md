@@ -1,163 +1,96 @@
-# 🔐 Secure Login System with Email OTP & 2FA (Google Authenticator)
+# 🔐 Secure Login System  
+**Email OTP · Google Authenticator (2FA) · Forgot Password · Strong Password Policy**
 
-A full-stack **secure authentication system** built using **FastAPI**, **React (Vite)**, **Firebase (Firestore)**, and **JWT**, implementing **email verification OTP** during registration and **Google Authenticator–based Two-Factor Authentication (2FA)** during login.
+A full-stack secure authentication system built with **React (Vite)**, **FastAPI**, and **Firebase Firestore**, implementing industry-grade authentication and password security.
 
 ---
 
-## 📌 Key Features
+## 🚀 Features
 
-### ✅ Registration (Email Verification)
-- Email & Password signup
-- **Email OTP verification** (SMTP using App Password)
-- Prevents fake or invalid email registrations
+### ✅ Registration
+- Email OTP verification
+- Strong password creation
+- Google Authenticator (TOTP) QR code setup
+- Secure user account creation
 
-### ✅ Login (Strong Authentication)
-- Email + Password
-- **Time-based OTP (TOTP) via Google Authenticator**
-- JWT token issued after successful login
+### ✅ Login
+- Email + Password verification
+- Mandatory Google Authenticator OTP for every login
+- JWT-based authentication
 
-### ✅ Security Best Practices
-- Password hashing
-- Time-based OTP (RFC 6238)
+### ✅ Forgot Password
+- Email OTP verification
+- Secure password reset
+- Database update with new password
+
+### ✅ Security
+- OTP expiration
+- OTP resend with 60-second cooldown
+- Google Authenticator (TOTP)
+- bcrypt password hashing
 - JWT authentication
-- Environment variables for secrets
-- `.gitignore` protection for sensitive files
 
 ---
 
-## 🧠 Authentication Flow
+## 🔒 Password Policy (Strict)
 
-### 🔹 Registration Flow
-```
-User → Email + Password
-     → Email OTP sent (SMTP)
-     → OTP verification
-     → User account created
-     → TOTP secret generated (for future login)
-```
+Passwords **must meet ALL conditions**:
 
-### 🔹 Login Flow
-```
-User → Email + Password
-     → Google Authenticator OTP
-     → JWT token issued
-     → Welcome Dashboard
-```
+- Minimum **12 characters**
+- Maximum **36 characters**
+- At least:
+  - **1 uppercase letter**
+  - **1 lowercase letter**
+  - **1 number**
+  - **1 special character** (`! @ # $ % ^ & *` etc.)
 
-✔ Email OTP = Verification  
-✔ Google Authenticator OTP = Authentication (2FA)
+❌ Passwords that do not meet these rules are rejected during:
+- Registration
+- Password reset
 
 ---
 
 ## 🛠️ Tech Stack
 
+### Frontend
+- React (Vite)
+- Axios
+- Tailwind CSS
+
 ### Backend
 - FastAPI
 - Firebase Firestore
-- PyOTP
+- PyOTP (Google Authenticator)
+- bcrypt
 - JWT
-- SMTP (Gmail App Password)
-
-### Frontend
-- React (Vite)
-- Tailwind CSS v4
-- Axios
+- SendGrid / SMTP Email Service
 
 ---
 
-## 📁 Project Structure
-
-```
-Secure login/
-├── backend/
-│   ├── app/
-│   │   ├── routes/
-│   │   │   └── auth.py
-│   │   ├── security.py
-│   │   ├── email_service.py
-│   │   ├── config.py
-│   │   ├── database.py
-│   │   └── main.py
-│   ├── venv/
-│   ├── .env
-│   └── .gitignore
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── index.html
-│   └── package.json
-│
-└── README.md
-```
-
----
-
-## 🔐 Environment Variables
-
-All sensitive credentials are stored in `.env` and excluded from GitHub.
-
-### backend/.env
-```
-JWT_SECRET=your_secret_key
-JWT_ALGORITHM=HS256
-JWT_EXPIRE_MINUTES=60
-
-ISSUER_NAME=SecureLogin
-
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=465
-EMAIL_USER=yourmail@gmail.com
-EMAIL_PASSWORD=your_app_password
-```
-
----
-
-## ▶️ How to Run Locally
+## ▶️ Run Locally
 
 ### Backend
-```
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
+```bash
 uvicorn app.main:app --reload
 ```
 
 ### Frontend
-```
-cd frontend
-npm install
+```bash
 npm run dev
 ```
 
 ---
 
-## 🔗 API Endpoints
+## ⏱️ OTP Rules
 
-| Method | Endpoint | Description |
-|------|---------|-------------|
-| POST | /auth/register/request-otp | Send email OTP |
-| POST | /auth/register/verify-otp | Verify email OTP & register |
-| POST | /auth/login | Login with password + TOTP |
-| GET  | /auth/qr/{email} | Get Google Authenticator QR |
-
----
-
-## 🔒 Security Highlights
-
-- Email OTP prevents fake registrations
-- TOTP prevents account takeover
-- JWT ensures stateless authentication
-- Secrets protected using environment variables
-- Time-limited OTP expiry
+| Feature | Value |
+|------|------|
+OTP Expiry | 5 minutes
+Resend OTP Cooldown | 60 seconds
+2FA | Mandatory
 
 ---
 
-## 🎓 Academic Explanation
+## 📄 License
 
-Email OTP is used for user verification, while Google Authenticator TOTP is used for two-factor authentication during login. Secrets are stored using environment variables and excluded from version control.
+This project is licensed under the MIT License. Feel free to fork and customize, but credit is appreciated.
