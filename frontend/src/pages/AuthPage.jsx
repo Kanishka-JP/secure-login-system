@@ -93,13 +93,33 @@ export default function AuthPage({ onLogin }) {
     setLoading(false);
   };
 
+  const isStrongPassword = (password) => {
+    const regex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{12,36}$/;
+    return regex.test(password);
+  };
+
   const handleCreateAccount = async () => {
     resetMessages();
+
+    // 1️⃣ Password match check
     if (regPassword !== regConfirm) {
       setError("Passwords do not match");
       return;
     }
 
+    // 2️⃣ Strong password validation (12–36 chars + rules)
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{12,36}$/;
+
+    if (!strongPasswordRegex.test(regPassword)) {
+      setError(
+        "Password must be 12–36 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character"
+      );
+      return;
+    }
+
+    // 3️⃣ Proceed with registration
     setLoading(true);
     try {
       const res = await setPassword(regEmail, regPassword, regConfirm);
@@ -109,8 +129,9 @@ export default function AuthPage({ onLogin }) {
       setRegStep(3);
     } catch (e) {
       setError(e?.response?.data?.detail || "Registration failed");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   /* ================= LOGIN ================= */
@@ -166,11 +187,25 @@ export default function AuthPage({ onLogin }) {
 
   const handleResetPassword = async () => {
     resetMessages();
+
+    // 1️⃣ Password match check
     if (fpPassword !== fpConfirm) {
       setError("Passwords do not match");
       return;
     }
 
+    // 2️⃣ Strong password validation (12–36 chars + rules)
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{12,36}$/;
+
+    if (!strongPasswordRegex.test(fpPassword)) {
+      setError(
+        "Password must be 12–36 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character"
+      );
+      return;
+    }
+
+    // 3️⃣ Proceed with password reset
     setLoading(true);
     try {
       await resetPassword(fpEmail, fpPassword, fpConfirm);
@@ -179,8 +214,9 @@ export default function AuthPage({ onLogin }) {
       setLoginStep(0);
     } catch (e) {
       setError(e?.response?.data?.detail || "Reset failed");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   /* ================= UI ================= */

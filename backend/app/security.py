@@ -2,6 +2,7 @@ import bcrypt
 import pyotp
 import random
 import string
+import re
 from datetime import datetime, timedelta
 
 from jose import jwt
@@ -35,6 +36,24 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
+def is_strong_password(password: str) -> bool:
+    # length check (UPDATED)
+    if len(password) < 12 or len(password) > 36:
+        return False
+
+    if not re.search(r"[A-Z]", password):
+        return False
+
+    if not re.search(r"[a-z]", password):
+        return False
+
+    if not re.search(r"[0-9]", password):
+        return False
+
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password):
+        return False
+
+    return True
 
 # ================= GOOGLE AUTHENTICATOR =================
 

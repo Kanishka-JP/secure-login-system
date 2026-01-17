@@ -19,6 +19,7 @@ from app.security import (
     generate_totp_secret,
     verify_totp,
     create_jwt,
+    is_strong_password
 )
 from app.email_service import send_otp_email
 from app.config import ISSUER_NAME
@@ -81,6 +82,12 @@ def verify_email_otp(data: OTPVerifyRequest):
 # ================= REGISTER : SET PASSWORD + GENERATE 2FA =================
 @router.post("/register/set-password")
 def set_password(data: SetPasswordRequest):
+    if not is_strong_password(data.password):
+        raise HTTPException(
+            400,
+            "Password must be 12–36 characters long and include uppercase, lowercase, number, and special character"
+        )
+    
     if data.password != data.confirm_password:
         raise HTTPException(400, "Passwords do not match")
 
@@ -193,6 +200,12 @@ def verify_forgot_otp(data: OTPVerifyRequest):
 # ================= FORGOT PASSWORD : RESET =================
 @router.post("/forgot/reset-password")
 def reset_password(data: SetPasswordRequest):
+    if not is_strong_password(data.password):
+        raise HTTPException(
+            400,
+            "Password must be 12–36 characters long and include uppercase, lowercase, number, and special character"
+        )
+    
     if data.password != data.confirm_password:
         raise HTTPException(400, "Passwords do not match")
 
