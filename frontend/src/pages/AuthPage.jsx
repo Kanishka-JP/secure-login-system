@@ -26,6 +26,7 @@ export default function AuthPage({ onLogin }) {
   const [regOtp, setRegOtp] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regConfirm, setRegConfirm] = useState("");
+  const [qrCode, setQrCode] = useState(null); // 🔥 NEW
 
   /* ================= LOGIN ================= */
   const [loginStep, setLoginStep] = useState(0);
@@ -85,12 +86,14 @@ export default function AuthPage({ onLogin }) {
       setError("Passwords do not match");
       return;
     }
+
     setLoading(true);
     try {
-      await setPassword(regEmail, regPassword, regConfirm);
-      setSuccess("Registration successful. Please login.");
-      setTab("login");
-      setLoginStep(0);
+      const res = await setPassword(regEmail, regPassword, regConfirm);
+
+      // 🔥 SHOW QR STEP
+      setQrCode(`data:image/png;base64,${res.data.qr_code_base64}`);
+      setRegStep(3);
     } catch (e) {
       setError(e?.response?.data?.detail || "Registration failed");
     }
@@ -129,7 +132,6 @@ export default function AuthPage({ onLogin }) {
     try {
       await sendForgotOTP(fpEmail);
       setFpStep(1);
-      setSuccess("OTP sent");
     } catch (e) {
       setError(e?.response?.data?.detail || "Failed to send OTP");
     }
@@ -154,6 +156,7 @@ export default function AuthPage({ onLogin }) {
       setError("Passwords do not match");
       return;
     }
+
     setLoading(true);
     try {
       await resetPassword(fpEmail, fpPassword, fpConfirm);
@@ -165,6 +168,8 @@ export default function AuthPage({ onLogin }) {
     }
     setLoading(false);
   };
+
+  /* ================= UI ================= */
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 to-slate-900 px-4">
@@ -240,14 +245,45 @@ export default function AuthPage({ onLogin }) {
 
             {regStep === 2 && (
               <>
-                <InputField label="Password" type="password" onChange={setRegPassword} />
-                <InputField label="Confirm Password" type="password" onChange={setRegConfirm} />
+                <InputField
+                  label="Password"
+                  type="password"
+                  onChange={setRegPassword}
+                />
+                <InputField
+                  label="Confirm Password"
+                  type="password"
+                  onChange={setRegConfirm}
+                />
                 <button
                   disabled={loading}
                   onClick={handleCreateAccount}
                   className={`${primaryBtn} ${disabledStyle}`}
                 >
-                  Create Account
+                  Continue
+                </button>
+              </>
+            )}
+
+            {/* 🔥 QR STEP */}
+            {regStep === 3 && (
+              <>
+                <p className="text-slate-300 text-center mb-3">
+                  Scan this QR using Google Authenticator
+                </p>
+
+                <div className="flex justify-center bg-white p-3 rounded-lg mb-4">
+                  <img src={qrCode} alt="Google Authenticator QR" className="w-40" />
+                </div>
+
+                <button
+                  className={successBtn}
+                  onClick={() => {
+                    setTab("login");
+                    setLoginStep(0);
+                  }}
+                >
+                  Go to Login
                 </button>
               </>
             )}
@@ -262,7 +298,11 @@ export default function AuthPage({ onLogin }) {
             {loginStep === 0 && (
               <>
                 <InputField label="Email" onChange={setLoginEmail} />
-                <InputField label="Password" type="password" onChange={setLoginPassword} />
+                <InputField
+                  label="Password"
+                  type="password"
+                  onChange={setLoginPassword}
+                />
 
                 <p
                   className="text-red-400 text-sm cursor-pointer mb-3"
@@ -275,10 +315,7 @@ export default function AuthPage({ onLogin }) {
                   Forgot password?
                 </p>
 
-                <button
-                  onClick={handleVerifyCredentials}
-                  className={successBtn}
-                >
+                <button onClick={handleVerifyCredentials} className={successBtn}>
                   Continue
                 </button>
               </>
@@ -299,7 +336,7 @@ export default function AuthPage({ onLogin }) {
           </>
         )}
 
-        {/* FORGOT PASSWORD */}
+        {/* FORGOT */}
         {tab === "forgot" && (
           <>
             {fpStep === 0 && (
@@ -330,8 +367,16 @@ export default function AuthPage({ onLogin }) {
 
             {fpStep === 2 && (
               <>
-                <InputField label="New Password" type="password" onChange={setFpPassword} />
-                <InputField label="Confirm Password" type="password" onChange={setFpConfirm} />
+                <InputField
+                  label="New Password"
+                  type="password"
+                  onChange={setFpPassword}
+                />
+                <InputField
+                  label="Confirm Password"
+                  type="password"
+                  onChange={setFpConfirm}
+                />
                 <button
                   disabled={loading}
                   onClick={handleResetPassword}

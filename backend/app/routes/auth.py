@@ -95,9 +95,10 @@ def set_password(data: SetPasswordRequest):
 
     otpauth_uri = totp.provisioning_uri(
         name=data.email,
-        issuer_name=ISSUER_NAME,
+        issuer_name=ISSUER_NAME
     )
 
+    # Generate QR
     qr = qrcode.make(otpauth_uri)
     buf = io.BytesIO()
     qr.save(buf)
@@ -107,7 +108,7 @@ def set_password(data: SetPasswordRequest):
         "email": data.email,
         "password_hash": hash_password(data.password),
         "totp_secret": secret,
-        "created_at": datetime.now(timezone.utc),
+        "created_at": datetime.utcnow(),
     })
 
     otp_ref.delete()
