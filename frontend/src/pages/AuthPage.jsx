@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import {
   sendEmailOTP,
   verifyEmailOTP,
@@ -19,7 +19,9 @@ export default function AuthPage({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
+  // 🔁 Resend OTP timer (shared)
+  const [resendTimer, setResendTimer] = useState(0);
+  
   /* ================= REGISTER ================= */
   const [regStep, setRegStep] = useState(0);
   const [regEmail, setRegEmail] = useState("");
@@ -41,6 +43,16 @@ export default function AuthPage({ onLogin }) {
   const [fpPassword, setFpPassword] = useState("");
   const [fpConfirm, setFpConfirm] = useState("");
 
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+
+    const interval = setInterval(() => {
+      setResendTimer((t) => t - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
   const resetMessages = () => {
     setError("");
     setSuccess("");
@@ -60,6 +72,7 @@ export default function AuthPage({ onLogin }) {
     try {
       await sendEmailOTP(regEmail);
       setRegStep(1);
+      setResendTimer(60);
       setSuccess("OTP sent to email");
     } catch (e) {
       setError(e?.response?.data?.detail || "Failed to send OTP");
@@ -132,6 +145,7 @@ export default function AuthPage({ onLogin }) {
     try {
       await sendForgotOTP(fpEmail);
       setFpStep(1);
+      setResendTimer(60);
     } catch (e) {
       setError(e?.response?.data?.detail || "Failed to send OTP");
     }
@@ -240,6 +254,24 @@ export default function AuthPage({ onLogin }) {
                 >
                   Verify Email
                 </button>
+                <p className="text-center text-sm mt-3 text-slate-400">
+                  {resendTimer > 0 ? (
+                    <>
+                      Resend OTP in{" "}
+                      <span className="text-white font-semibold">
+                        {resendTimer}s
+                      </span>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSendRegOTP}
+                      className="text-blue-400 hover:underline"
+                    >
+                      Resend OTP
+                    </button>
+                  )}
+                </p>
               </>
             )}
 
@@ -362,6 +394,24 @@ export default function AuthPage({ onLogin }) {
                 >
                   Verify OTP
                 </button>
+                <p className="text-center text-sm mt-3 text-slate-400">
+                  {resendTimer > 0 ? (
+                    <>
+                      Resend OTP in{" "}
+                      <span className="text-white font-semibold">
+                        {resendTimer}s
+                      </span>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSendForgotOTP}
+                      className="text-blue-400 hover:underline"
+                    >
+                      Resend OTP
+                    </button>
+                  )}
+                </p>
               </>
             )}
 
