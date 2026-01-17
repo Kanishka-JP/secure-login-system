@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone 
 import pyotp
 import qrcode
 import io
@@ -29,55 +29,60 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # ================= STEP 1: SEND EMAIL OTP =================
 @router.post("/register/send-otp")
 def send_email_otp(data: EmailRequest):
+    if db.collection("users").document(data.email).get().exists:
+        raise HTTPException(400, "User already exists")
+
+    otp = generate_email_otp()
+
+    db.collection("email_otps").document(data.email).set({
+        "otp": otp,
+        "created_at": datetime.utcnow()
+    })
+
     try:
-        otp = generate_email_otp()
-
-        db.collection("email_otps").document(data.email).set({
-            "otp": otp,
-            "created_at": datetime.utcnow()
-        })
-
         send_otp_email(data.email, otp)
+    except Exception:
+        raise HTTPException(500, "Email service unavailable. Try again later.")
 
-        return {"message": "OTP sent"}
-    except Exception as e:
-        print("SEND OTP ERROR:", e)
-        raise HTTPException(
-            status_code=500,
-            detail="Email service unavailable. Try again later."
-        )
+    return {"message": "OTP sent to email"}
+
 
 # ================= STEP 2: VERIFY EMAIL OTP =================
+OTP_VALIDITY_MINUTES = 5
+
 @router.post("/register/verify-otp")
-def verify_email_otp_route(data: EmailOTPVerify):
+def verify_email_otp(data: EmailOTPVerify):
     ref = db.collection("email_otps").document(data.email)
     doc = ref.get()
 
     if not doc.exists:
-        raise HTTPException(status_code=400, detail="OTP not found")
+        raise HTTPException(400, "OTP not found")
 
     otp_data = doc.to_dict()
 
     created_at = otp_data.get("created_at")
     if not created_at:
-        raise HTTPException(status_code=400, detail="Invalid OTP record")
+        raise HTTPException(400, "Invalid OTP record")
 
-    # Firestore timestamp → datetime
+    # Firestore Timestamp → datetime
     if hasattr(created_at, "to_datetime"):
         created_at = created_at.to_datetime()
 
-    # Expiry check
-    if otp_expired(created_at):
-        ref.delete()
-        raise HTTPException(status_code=400, detail="OTP expired")
+    # Normalize to UTC
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
 
-    # OTP match
+    now = datetime.now(timezone.utc)
+
+    if now - created_at > timedelta(minutes=OTP_VALIDITY_MINUTES):
+        ref.delete()
+        raise HTTPException(400, "OTP expired")
+
     if otp_data.get("otp") != data.otp:
-        raise HTTPException(status_code=401, detail="Invalid OTP")
+        raise HTTPException(401, "Invalid OTP")
 
     ref.update({"verified": True})
     return {"message": "Email verified"}
-
 
 # ================= STEP 3: SET PASSWORD + GENERATE 2FA =================
 @router.post("/register/set-password")

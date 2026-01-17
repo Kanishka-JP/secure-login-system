@@ -12,8 +12,5 @@ JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", 60))
 ISSUER_NAME = os.getenv("ISSUER_NAME", "SecureLogin")
 
 # ---------------- EMAIL CONFIG ----------------
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 FROM_EMAIL = os.getenv("FROM_EMAIL")
-
-if not RESEND_API_KEY or not FROM_EMAIL:
-    raise RuntimeError("Resend configuration missing")

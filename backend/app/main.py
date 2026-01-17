@@ -4,12 +4,12 @@ from app.routes import auth
 
 app = FastAPI()
 
-# ✅ CORS CONFIG (Vercel ↔ Render)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://secure-login-system-three.vercel.app",
+        "http://127.0.0.1:5173",
+        "https://secure-login-system-three.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
