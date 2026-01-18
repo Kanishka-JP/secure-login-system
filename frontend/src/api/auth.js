@@ -5,8 +5,9 @@ const API = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000, // 10 seconds safety timeout
+  timeout: 10000, 
 });
+
 
 /* ---------- REGISTRATION ---------- */
 
@@ -23,6 +24,7 @@ export const setPassword = (email, password, confirm_password) =>
     confirm_password,
   });
 
+
 /* ---------- LOGIN ---------- */
 
 export const loginUser = (email, password, otp) =>
@@ -32,6 +34,7 @@ export const loginUser = (email, password, otp) =>
     otp,
   });
 
+  
 /* ---------- FORGOT PASSWORD ---------- */
 
 export const sendForgotOTP = (email) =>

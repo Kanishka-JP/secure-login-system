@@ -15,7 +15,6 @@ def generate_email_otp() -> str:
     """Generate a 6-digit numeric OTP"""
     return "".join(random.choices(string.digits, k=6))
 
-
 def otp_expired(created_at, minutes: int = 5) -> bool:
     """
     Check if OTP is expired.
@@ -31,7 +30,6 @@ def otp_expired(created_at, minutes: int = 5) -> bool:
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
 
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
@@ -55,11 +53,11 @@ def is_strong_password(password: str) -> bool:
 
     return True
 
+
 # ================= GOOGLE AUTHENTICATOR =================
 
 def generate_totp_secret() -> str:
     return pyotp.random_base32()
-
 
 def verify_totp(secret: str, otp: str) -> bool:
     totp = pyotp.TOTP(secret)

@@ -15,11 +15,10 @@ import OTPBoxes from "../components/OTPBoxes";
 import StepIndicator from "../components/StepIndicator";
 
 export default function AuthPage({ onLogin }) {
-  const [tab, setTab] = useState("register"); // register | login | forgot
+  const [tab, setTab] = useState("register");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  // 🔁 Resend OTP timer (shared)
   const [resendTimer, setResendTimer] = useState(0);
   
   /* ================= REGISTER ================= */
@@ -28,7 +27,7 @@ export default function AuthPage({ onLogin }) {
   const [regOtp, setRegOtp] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regConfirm, setRegConfirm] = useState("");
-  const [qrCode, setQrCode] = useState(null); // 🔥 NEW
+  const [qrCode, setQrCode] = useState(null);
 
   /* ================= LOGIN ================= */
   const [loginStep, setLoginStep] = useState(0);
@@ -102,13 +101,11 @@ export default function AuthPage({ onLogin }) {
   const handleCreateAccount = async () => {
     resetMessages();
 
-    // 1️⃣ Password match check
     if (regPassword !== regConfirm) {
       setError("Passwords do not match");
       return;
     }
 
-    // 2️⃣ Strong password validation (12–36 chars + rules)
     const strongPasswordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{12,36}$/;
 
@@ -119,12 +116,10 @@ export default function AuthPage({ onLogin }) {
       return;
     }
 
-    // 3️⃣ Proceed with registration
     setLoading(true);
     try {
       const res = await setPassword(regEmail, regPassword, regConfirm);
 
-      // 🔥 SHOW QR STEP
       setQrCode(`data:image/png;base64,${res.data.qr_code_base64}`);
       setRegStep(3);
     } catch (e) {
@@ -188,13 +183,11 @@ export default function AuthPage({ onLogin }) {
   const handleResetPassword = async () => {
     resetMessages();
 
-    // 1️⃣ Password match check
     if (fpPassword !== fpConfirm) {
       setError("Passwords do not match");
       return;
     }
 
-    // 2️⃣ Strong password validation (12–36 chars + rules)
     const strongPasswordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{12,36}$/;
 
@@ -205,7 +198,6 @@ export default function AuthPage({ onLogin }) {
       return;
     }
 
-    // 3️⃣ Proceed with password reset
     setLoading(true);
     try {
       await resetPassword(fpEmail, fpPassword, fpConfirm);
@@ -333,7 +325,7 @@ export default function AuthPage({ onLogin }) {
               </>
             )}
 
-            {/* 🔥 QR STEP */}
+            {/* QR STEP */}
             {regStep === 3 && (
               <>
                 <p className="text-slate-300 text-center mb-3">

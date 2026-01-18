@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 
 
-# ---------- COMMON ----------
+# ---------- REGISTRATION ----------
 
 class EmailRequest(BaseModel):
     email: EmailStr
@@ -9,7 +9,7 @@ class EmailRequest(BaseModel):
 
 class OTPVerifyRequest(BaseModel):
     email: EmailStr
-    otp: str
+    otp: str # Email OTP
 
 
 class SetPasswordRequest(BaseModel):
